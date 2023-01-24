@@ -75,7 +75,7 @@ firebase.database().ref("students/"+encodeURIComponent(base64encode(ud["pn"]))).
  data:encryptt,
  id: updt
 })
-tmMsg("94"+parseInt(ud["wa"])+"||||"+"*Hello "+ ud["fn"]+"*\n \n✅ You have successfully registered to English RE.  \n🔵 Your New Student id is *RE"+sliced+"*.\n💁 Text me *'help'* if you want to read help docs on using English RE platform.\n \n_Happy Learning with English RE._")
+tmMsg("<b>👨‍🎓 New Student Registration on English RE</b> \n \n"+ "Student ID: RE"+sliced+ "Phone Number: 94"+parseInt(ud["wa"])+"\n"+ "Student Name: "+ ud["fn"]+ " "+ ud["ln"]+ "<b>Hotline: 078 713 40 53</b>"+ "\n"+ "<b>Happy Learning with English RE</b>")
 res.send(sliced)
 
   }
@@ -139,7 +139,7 @@ admin.database().ref("students/"+updt).update(pushing).then((result) => {
     console.log("Encrypted with "+dt["pw"])
 
     var data = JSON.stringify(dt)
-    tmMsg("User Updated Profile info\n" + data)
+    tmMsg("<b>🔄 Student Profile Update</b>\n"+ data)
     
     var encryptt = CryptoJS.AES.encrypt(data, dt["pw"]).toString();
     console.log(dt["pn"],authid)
